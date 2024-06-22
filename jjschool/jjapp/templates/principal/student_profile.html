@@ -1,51 +1,48 @@
+<!-- profile.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Profile</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        /* Custom styles */
+        /* CSS styles as before */
         body {
-            background-color: #f5f5f5;
-            font-family: 'Roboto', sans-serif;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
         }
-
         .container {
             max-width: 600px;
-            margin: 50px auto;
+            margin: 20px auto;
+            background-color: #fff;
             padding: 20px;
-            background-color: #ffffff;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-
         .heading {
-            font-size: 24px;
-            font-weight: 500;
+            text-align: center;
             color: #333;
-            margin-bottom: 20px;
         }
-
         .profile-info {
-            font-size: 18px;
             margin-bottom: 10px;
         }
-
+        .profile-info strong {
+            font-weight: bold;
+            margin-right: 5px;
+        }
         .back-button {
             display: inline-block;
-            padding: 10px 20px;
-            background-color: #6200ea;
-            color: #ffffff;
-            border-radius: 4px;
+            margin-top: 15px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: #fff;
             text-decoration: none;
-            font-size: 16px;
-            transition: background-color 0.3s;
+            border-radius: 4px;
         }
-
         .back-button:hover {
-            background-color: #3700b3;
+            background-color: #45a049;
         }
     </style>
 </head>
@@ -56,10 +53,19 @@
             <strong>Full Name:</strong> {{ student.first_name }} {{ student.last_name }}
         </div>
         <div class="profile-info">
-            <strong>Class:</strong> {{ student.class_level }}
+            <strong>Class:</strong> {{ student.grade }}
         </div>
         <div class="profile-info">
-            <strong>Class Teacher:</strong> {{ student.class_teacher.first_name }} {{ student.class_teacher.last_name }}
+            <strong>Class Teacher:</strong> {{ student.classroom.class_teacher }}
+        </div>
+        <div class="profile-info">
+            <strong>Aadhar Number:</strong> {{ student.adhar_num }}
+        </div>
+        <div class="profile-info">
+            <strong>Remaining Fee:</strong> {{ student.remaining_fee }}
+        </div>
+        <div class="profile-info">
+            <strong>Role Number:</strong> {{ student.roll_number }}
         </div>
         <a href="{% url 'list_students' %}" class="back-button">Back to List</a>
     </div>

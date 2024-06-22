@@ -6,6 +6,7 @@
 <body>
     <h1>Register Student</h1>
     <p>Aadhaar Number: {{ student.adhar_num }}</p>
+    
     <form method="post">
         {% csrf_token %}
         {{ user_form.as_p }}

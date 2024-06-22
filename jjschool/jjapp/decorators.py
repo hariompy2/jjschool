@@ -7,7 +7,7 @@ def student_required(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if request.user.is_authenticated and request.user.role != 'student':
-            return redirect('login')  # or some other URL for unauthorized users
+            return redirect('student_login')  # or some other URL for unauthorized users
         return view_func(request, *args, **kwargs)
     return wrapper
 
@@ -15,7 +15,7 @@ def teacher_required(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if request.user.is_authenticated and request.user.role != 'teacher':
-            return redirect('login')  # or some other URL for unauthorized users
+            return redirect('student_login')  # or some other URL for unauthorized users
         return view_func(request, *args, **kwargs)
     return wrapper
 

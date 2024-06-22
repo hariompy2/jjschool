@@ -36,7 +36,7 @@ urlpatterns = [
      path('principal/grades/add/', add_grade, name='add_grade'),
      path('principal/grades/delete/<int:grade_id>/', delete_grade, name='delete_grade'),
 
-     path('students/<int:student_id>/', student_profile, name='student_profile'),
+     path('principal/students/<int:student_id>/', student_profile_for_pri, name='student_profile'),
 
 
 
@@ -45,7 +45,7 @@ urlpatterns = [
 
      path('check-aadhaar/', check_aadhaar, name='check_aadhaar'),
      path('register/<int:student_id>/', register_student, name='register_student'),
-     path('login/', student_login, name='login'),
+     path('login/', student_login, name='student_login'),
      path('dashboard/', student_dashboard, name='student_dashboard'),
 
 

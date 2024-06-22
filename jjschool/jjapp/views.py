@@ -95,18 +95,54 @@ def delete_notification(request, notification_id):
     notification.delete()
     return redirect('manage_notifications')
 
+from django.shortcuts import render
+from django.contrib.auth.decorators import user_passes_test
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Q
+from .models import Student
+
+# def is_principal(user):
+#     return user.is_authenticated and user.is_principal
 
 @user_passes_test(is_principal, login_url='principal_login')
 def list_students(request):
+    search_query = request.GET.get('search', '')
     students = Student.objects.filter(is_deleted=False)
-    return render(request, 'principal/list_students.html', {'students': students})
+
+    if search_query:
+        students = students.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(student_id__icontains=search_query)
+        )
+
+    # Sorting
+    sort_by = request.GET.get('sort', 'first_name')
+    students = students.order_by(sort_by)
+
+    # Pagination
+    paginator = Paginator(students, 10)  # Show 10 students per page
+    page = request.GET.get('page')
+    try:
+        students = paginator.page(page)
+    except PageNotAnInteger:
+        students = paginator.page(1)
+    except EmptyPage:
+        students = paginator.page(paginator.num_pages)
+
+    context = {
+        'students': students,
+        'search_query': search_query,
+        'sort_by': sort_by,
+    }
+    return render(request, 'principal/list_students.html', context)
 
 
 
 
-# def student_profile(request, student_id):
-#     student = get_object_or_404(Student, user_id=student_id)
-#     return render(request, 'principal/student_profile.html', {'student': student})
+def student_profile_for_pri(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+    return render(request, 'principal/student_profile.html', {'student': student})
 
 
 
@@ -117,7 +153,7 @@ def deleted_students(request):
 
 
 def soft_delete_student(request, student_id):
-    student = get_object_or_404(Student, user__id=student_id)
+    student = get_object_or_404(Student, id=student_id)
     student.is_deleted = True
     student.save()
     return redirect('list_students')
@@ -125,7 +161,7 @@ def soft_delete_student(request, student_id):
 
 @user_passes_test(is_principal, login_url='principal_login')
 def restore_student(request, student_id):
-    student = get_object_or_404(Student, user_id=student_id)
+    student = get_object_or_404(Student, id=student_id)
     student.is_deleted = False
     student.save()
     return redirect('deleted_students')
@@ -135,9 +171,7 @@ def add_student(request):
     if request.method == "POST":
         form = StudentForm(request.POST)
         if form.is_valid():
-            user = request.user  
             student = form.save(commit=False)
-            student.user = user  
             student.save()  
             return redirect('principal_dashboard')
     else:
@@ -243,13 +277,13 @@ def delete_teacher(request, teacher_id):
 
 @user_passes_test(is_principal, login_url='principal_login')
 def view_student_details(request, student_id):
-    student = get_object_or_404(Student, user__id=student_id)
+    student = get_object_or_404(Student, id=student_id)
     return render(request, 'principal/view_student_details.html', {'student': student})
 
 
 @user_passes_test(is_principal, login_url='principal_login')
 def view_teacher_details(request, teacher_id):
-    teacher = get_object_or_404(Teacher, user__id=teacher_id)
+    teacher = get_object_or_404(Teacher, id=teacher_id)
     return render(request, 'principal/view_teacher_details.html', {'teacher': teacher})
 
 
@@ -462,7 +496,7 @@ def check_aadhaar(request):
             adhar_num = form.cleaned_data['adhar_num']
             try:
                 student = Student.objects.get(adhar_num=adhar_num)
-                return redirect('register_student', student_id=student.user.id)
+                return redirect('register_student', student_id=student.id)
             except Student.DoesNotExist:
                 form.add_error('adhar_num', 'Aadhaar number not found.')
     else:
@@ -477,8 +511,13 @@ from django.db import IntegrityError
 
 from .models import Student
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db import IntegrityError
+from .models import Student
+from .forms import CustomUserForm
+
 def register_student(request, student_id):
-    student = get_object_or_404(Student, user_id=student_id)
+    student = get_object_or_404(Student, id=student_id)
     if request.method == 'POST':
         user_form = CustomUserForm(request.POST)
         if user_form.is_valid():
@@ -489,16 +528,12 @@ def register_student(request, student_id):
                 user.save()
                 student.user = user
                 student.save()
-                return redirect('login')
+                return redirect('student_login')
             except IntegrityError:
                 user_form.add_error(None, 'A user with this username already exists.')
     else:
         user_form = CustomUserForm()
     return render(request, 'student/register_student.html', {'user_form': user_form, 'student': student})
-
-
-
-
 
 
 
@@ -545,7 +580,7 @@ def login_student(request):
     return render(request, 'student/login.html', {'form': form})
 
 
-@user_passes_test(is_student, login_url='login')
+@user_passes_test(is_student, login_url='student_login')
 def student_dashboard(request):
     return render(request, 'student/dashboard.html')
 
@@ -733,16 +768,53 @@ from django.contrib.auth.decorators import login_required
 from .models import Student
 from .forms import StudentProfileUpdateForm
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import Student
+from .forms import StudentProfileForm  # Assuming you have this form
+
 @login_required
 def student_profile(request):
-    student = objects.get(pk= request.pk)
+    try:
+        student = Student.objects.get(adhar_num=request.user.username)  # Assuming aadhaar_num is unique
+    except Student.DoesNotExist:
+        student = None
+
     if request.method == 'POST':
-        form = StudentProfileForm(instance=student)
-        return redirect('student_profile')
+        form = StudentProfileForm(request.POST, instance=student)
+        if form.is_valid():
+            form.save()
+            return redirect('student_profile')
     else:
         form = StudentProfileForm(instance=student)
+    
     context = {
         'student': student,
         'form': form
     }
     return render(request, 'student/profile.html', context)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
