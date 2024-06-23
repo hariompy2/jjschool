@@ -6,5 +6,6 @@ admin.site.register(Teacher)
 admin.site.register(Student)
 admin.site.register(CustomUser)
 admin.site.register(Attendance)
+admin.site.register(TeacherSubjectAssignment)
 
 

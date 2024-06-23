@@ -696,48 +696,64 @@ from django.shortcuts import render, redirect
 from .forms import TeacherSubjectAssignmentForm
 from .models import TeacherSubjectAssignment
 
-def assign_subjects_view(request):
-    teacher = request.user.teacher  # Assuming you have a way to get the logged-in teacher
 
-    if request.method == 'POST':
-        form = TeacherSubjectAssignmentForm(request.POST)
-        if form.is_valid():
-            # Since subjects are cleaned based on the selected grade in the form
-            teacher_subjects = form.save(commit=False)
-            for teacher_subject in teacher_subjects:
-                teacher_subject.teacher = teacher
-                teacher_subject.save()
-            return redirect('success_url')
-    else:
-        form = TeacherSubjectAssignmentForm(initial={'teacher': teacher})
-
-    return render(request, 'assign_subjects.html', {'form': form})
-
-
-
-
-
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-
-
-# @login_required
-
-# @login_required
+@login_required
 def teacher_subjects(request):
     try:
         teacher = request.user.teacher
-    except AttributeError:
-        return redirect('not_authorized')  # Redirect to a not authorized page or some other appropriate action
+    except Teacher.DoesNotExist:
+        return redirect('not_authorized')
     
     subjects = TeacherSubjectAssignment.objects.filter(teacher=teacher)
-    return render(request, 'teacher_subjects.html', {'subjects': subjects})
+    can_add_more = subjects.count() < 5
+    
+    return render(request, 'teacher_subjects.html', {
+        'assignment': subjects,
+        'can_add_more': can_add_more
+    })
 
+
+def add_subject(request):
+    try:
+        teacher = request.user.teacher
+    except Teacher.DoesNotExist:
+        return redirect('not_authorized')
+    
+    if request.method == 'POST':
+        form = TeacherSubjectAssignmentForm(request.POST, teacher=teacher)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.teacher = teacher
+            try:
+                assignment.save()
+                messages.success(request, "Subject assigned successfully.")
+                return redirect('teacher_subjects')
+            except IntegrityError:
+                messages.error(request, "You've already assigned this subject for this grade.")
+    else:
+        form = TeacherSubjectAssignmentForm(teacher=teacher)
+    
+    return render(request, 'add_subject.html', {'form': form})
+
+def load_subjects(request):
+    grade_id = request.GET.get('grade')
+    subjects = Subject.objects.filter(grade_id=grade_id).order_by('name')
+    return render(request, 'subject_dropdown_list_options.html', {'subjects': subjects})
+
+@login_required
+def remove_subject(request, assignment_id):
+    assignment = get_object_or_404(TeacherSubjectAssignment, id=assignment_id, teacher=request.user.teacher)
+    assignment.delete()
+    messages.success(request, "Subject removed successfully.")
+    return redirect('teacher_subjects')
+
+# def load_subjects(request):
+#     grade_id = request.GET.get('grade')
+#     subjects = Subject.objects.filter(grade_id=grade_id).order_by('name')
+#     return render(request, 'subject_dropdown_list_options.html', {'subjects': subjects})
 
 def not_authorized(request):
     return render(request, 'not_authorized.html')
-
 
 
 

@@ -222,26 +222,38 @@ class PrincipalSubjectForm(forms.Form):
         return subject
 
 from django import forms
-from .models import Teacher, Grade, Subject, TeacherSubjectAssignment
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.db import IntegrityError
+from .models import TeacherSubjectAssignment, Teacher, Subject, Grade
 
 class TeacherSubjectAssignmentForm(forms.ModelForm):
     class Meta:
         model = TeacherSubjectAssignment
-        fields = ['teacher', 'grade', 'subject']
+        fields = ['grade', 'subject']
 
-    def _init_(self, *args, **kwargs):
-        super()._init_(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        self.teacher = kwargs.pop('teacher', None)
+        super().__init__(*args, **kwargs)
+        self.fields['grade'].queryset = Grade.objects.all()
         self.fields['subject'].queryset = Subject.objects.none()
+
+        if 'grade' in self.data:
+            try:
+                grade_id = int(self.data.get('grade'))
+                self.fields['subject'].queryset = Subject.objects.filter(grade_id=grade_id)
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk and self.instance.grade:
+            self.fields['subject'].queryset = Subject.objects.filter(grade=self.instance.grade)
 
     def clean(self):
         cleaned_data = super().clean()
-        grade = cleaned_data.get('grade')
-        if grade:
-            self.fields['subject'].queryset = Subject.objects.filter(grade=grade)
+        if self.teacher:
+            assignments_count = TeacherSubjectAssignment.objects.filter(teacher=self.teacher).count()
+            if assignments_count >= 5:
+                raise forms.ValidationError("You can't assign more than 5 subjects to a teacher.")
         return cleaned_data
-
-
-
 
 # jjapp/forms.py
 

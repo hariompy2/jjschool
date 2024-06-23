@@ -58,10 +58,16 @@ urlpatterns = [
 
 
      path('grades/<int:grade_id>/subjects/add/', add_grade_subjects, name='add_grade_subjects'),
-     path('assign-subjects/', assign_subjects_view, name='assign_subjects'),
+    #  path('assign-subjects/', assign_subjects_view, name='assign_subjects'),
      path('teacher-subjects/', teacher_subjects, name='teacher_subjects'),
      path('not-authorized/', not_authorized, name='not_authorized'),
      path('grades/<int:grade_id>/', grade_detail, name='grade_detail'),
+
+
+    path('subjects/add/', add_subject, name='add_subject'),
+    path('subjects/remove/<int:assignment_id>/', remove_subject, name='remove_subject'),
+    path('ajax/load-subjects/', load_subjects, name='ajax_load_subjects'),
+
 
 
 

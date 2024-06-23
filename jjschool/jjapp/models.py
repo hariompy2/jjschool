@@ -181,10 +181,8 @@ class TeacherSubjectAssignment(models.Model):
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
     is_class_teacher = models.BooleanField(default=False)
 
-
-
-
-
+    class Meta:
+        unique_together = ('teacher', 'subject', 'grade')
 
 
 
